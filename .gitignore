@@ -2,3 +2,5 @@ __pycache__
 Tools/__pycache__
 Tools/MagicPanels/__pycache__
 CLAUDE.md
+.venv/
+.pytest_cache/
