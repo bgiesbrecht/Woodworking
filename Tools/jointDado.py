@@ -110,6 +110,46 @@ def _show_dialog(host, face, normal, normal_axis, in_plane_axes):
     _cut_dado(host, face, normal, normal_axis, run_axis, perp_axis, width, depth, offset)
 
 
+def _ensure_params_sheet(doc):
+    obj = doc.getObject("Params")
+    if obj is not None and obj.TypeId == "Spreadsheet::Sheet":
+        return obj
+    sheet = doc.addObject("Spreadsheet::Sheet", "Params")
+    sheet.set("A1", "PARAMS")
+    return sheet
+
+
+def _last_filled_row(sheet, max_scan=1000):
+    last = 0
+    for row in range(1, max_scan + 1):
+        try:
+            content = sheet.getContents(f"A{row}")
+        except Exception:
+            break
+        if content:
+            last = row
+    return last
+
+
+def _add_dado_aliases(sheet, cutter_name, position_mm, width_mm, depth_mm):
+    """Append three rows for this dado (position, width, depth) and return the aliases."""
+    rows = [
+        (f"dado.{cutter_name}.position", f"{cutter_name}_position", f"{position_mm} mm"),
+        (f"dado.{cutter_name}.width",    f"{cutter_name}_width",    f"{width_mm} mm"),
+        (f"dado.{cutter_name}.depth",    f"{cutter_name}_depth",    f"{depth_mm} mm"),
+    ]
+    next_row = max(1, _last_filled_row(sheet) + 2)
+    aliases = {}
+    for offset, (label, alias, value) in enumerate(rows):
+        row = next_row + offset
+        sheet.set(f"A{row}", label)
+        sheet.set(f"B{row}", value)
+        sheet.setAlias(f"B{row}", alias)
+        # Strip the cutter prefix to use as a dict key (e.g. "position", "width", "depth")
+        aliases[alias.split("_", 1)[1] if "_" in alias else alias] = alias
+    return aliases
+
+
 def _cut_dado(host, face, normal, normal_axis, run_axis, perp_axis,
               width, depth, offset):
     bbox = host.Shape.BoundBox
@@ -131,14 +171,15 @@ def _cut_dado(host, face, normal, normal_axis, run_axis, perp_axis,
     cut_size[run_axis] = bbox_size[run_axis] + 1.0
     cut_pos[run_axis] = bbox_min[run_axis] - 0.5
 
-    # Width along the perpendicular in-plane axis; offset from bbox_min on that axis
-    # (or centered on the selected face if offset is None).
+    # Width along the perpendicular in-plane axis. The perp-axis position is
+    # captured as an editable Params alias (distance from host's perp-axis
+    # bbox_min to the dado CENTER) so the user can move the dado later.
     cut_size[perp_axis] = width
     if offset is None:
-        face_center = (face.CenterOfMass.x, face.CenterOfMass.y, face.CenterOfMass.z)
-        cut_pos[perp_axis] = face_center[perp_axis] - width / 2.0
+        position_value = bbox_size[perp_axis] / 2.0
     else:
-        cut_pos[perp_axis] = bbox_min[perp_axis] + offset - width / 2.0
+        position_value = float(offset)
+    cut_pos[perp_axis] = bbox_min[perp_axis] + position_value - width / 2.0
 
     doc = host.Document
     doc.openTransaction("jointDado")
@@ -149,6 +190,60 @@ def _cut_dado(host, face, normal, normal_axis, run_axis, perp_axis,
         cutter.Width = cut_size[1]
         cutter.Height = cut_size[2]
         cutter.Placement.Base = FreeCAD.Vector(*cut_pos)
+
+        # Editable Params aliases for position, width, and depth. Position
+        # is "distance from host.Placement.Base.<perp_axis> to dado center".
+        # Width and depth are direct dimensions in mm.
+        sheet = _ensure_params_sheet(doc)
+        aliases = _add_dado_aliases(sheet, cutter.Name,
+                                     position_value, width, depth)
+
+        axis_letters = ("x", "y", "z")
+        dim_props = ("Length", "Width", "Height")
+
+        # Perp-axis dimension follows Params.<width>
+        cutter.setExpression(dim_props[perp_axis], f"Params.{aliases['width']}")
+
+        # Normal-axis dimension follows Params.<depth> + 0.001 mm overshoot
+        cutter.setExpression(dim_props[normal_axis],
+                              f"Params.{aliases['depth']} + 0.001 mm")
+
+        # Perp-axis position: host base + Params.position - cutter dim / 2
+        cutter.setExpression(
+            f"Placement.Base.{axis_letters[perp_axis]}",
+            f"{host.Name}.Placement.Base.{axis_letters[perp_axis]} "
+            f"+ Params.{aliases['position']} "
+            f"- {cutter.Name}.{dim_props[perp_axis]} / 2",
+        )
+
+        # The remaining two axes (run and normal-position) ideally track the
+        # host. That requires the host to expose Length/Width/Height —
+        # Part::Box does, Part::Cut does not. For non-Part::Box hosts we
+        # fall back to the static values already on the cutter.
+        if host.TypeId == "Part::Box":
+            # Run-axis dim and position track the host's run-axis extent
+            cutter.setExpression(
+                dim_props[run_axis],
+                f"{host.Name}.{dim_props[run_axis]} + 1 mm",
+            )
+            cutter.setExpression(
+                f"Placement.Base.{axis_letters[run_axis]}",
+                f"{host.Name}.Placement.Base.{axis_letters[run_axis]} - 0.5 mm",
+            )
+            # Normal-axis position: depends on which side of host the face is on.
+            if (normal[0], normal[1], normal[2])[normal_axis] > 0:
+                # Cutter starts at host's far edge minus depth.
+                cutter.setExpression(
+                    f"Placement.Base.{axis_letters[normal_axis]}",
+                    f"{host.Name}.Placement.Base.{axis_letters[normal_axis]} "
+                    f"+ {host.Name}.{dim_props[normal_axis]} "
+                    f"- Params.{aliases['depth']}",
+                )
+            else:
+                cutter.setExpression(
+                    f"Placement.Base.{axis_letters[normal_axis]}",
+                    f"{host.Name}.Placement.Base.{axis_letters[normal_axis]}",
+                )
 
         cut = doc.addObject("Part::Cut", host.Name + "_dado")
         cut.Base = host
