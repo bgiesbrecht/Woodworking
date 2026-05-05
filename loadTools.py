@@ -4108,6 +4108,45 @@ FreeCADGui.addCommand("jointMortiseCut", jointMortiseCut())
 
 	
 # ######################################################################################################################
+class jointDado():
+
+	def GetResources(self):
+		return {"Pixmap"  : os.path.join(iconPath, "jointDado.png"),
+				"MenuText": QT_TRANSLATE_NOOP("jointDado", "jointDado, cut a rectangular dado groove on a face"),
+				"ToolTip" : QT_TRANSLATE_NOOP("jointDado", "Select a planar face on the host panel, then run this tool. A dialog asks for dado run direction (along one of the in-plane axes), width (mm), depth (mm), and position from the panel edge (or 'center'). The tool subtracts a Part::Box cutter from the host using Part::Cut."),
+				"Accel"   : "" }
+
+	def Activated(self):
+
+		import os, sys
+		import fakemodule
+
+		modulePath = sys.path
+		
+		module = "jointDado"
+		
+		path = os.path.dirname(fakemodule.__file__)
+		path = os.path.join(path, "Tools")
+		
+		sys.path.append(path)
+
+		if module in sys.modules:
+			del sys.modules[module]
+
+		__import__(module, globals(), locals(), [], 0)
+		
+		sys.path = modulePath
+
+		return
+
+	def IsActive(self):
+		# not needed now, maybe in the future
+		return True
+
+FreeCADGui.addCommand("jointDado", jointDado())
+
+	
+# ######################################################################################################################
 class grainH():
 
 	def GetResources(self):

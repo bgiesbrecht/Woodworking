@@ -217,6 +217,7 @@ Tools = [
 	"magicJoints", "png", "magicJoints, to create joints based on sketch", "This tool allows you to move or copy joints created from sketch pattern, create mortise and tenon.",
 	"jointTenonCut", "png", "jointTenonCut, to create tenon by cut", "Click to see info.",
 	"jointMortiseCut", "png", "jointMortiseCut, to create mortise for jointTenonCut", "Click to see info.",
+	"jointDado", "png", "jointDado, cut a rectangular dado groove on a face", "Select a planar face on the host panel, then run this tool. A dialog asks for dado run direction (along one of the in-plane axes), width (mm), depth (mm), and position from the panel edge (or 'center'). The tool subtracts a Part::Box cutter from the host using Part::Cut.",
 	
 	"grainH", "png", "grainH, to create horizontal grain direction", "Click to see info.",
 	"grainV", "png", "grainV, to create vertical grain direction", "Click to see info.",
