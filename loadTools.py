@@ -52,6 +52,45 @@ FreeCADGui.addCommand("magicStart", magicStart())
 
 	
 # ######################################################################################################################
+class newCabinet():
+
+	def GetResources(self):
+		return {"Pixmap"  : os.path.join(iconPath, "newCabinet.png"),
+				"MenuText": QT_TRANSLATE_NOOP("newCabinet", "newCabinet, parametric cabinet starter"),
+				"ToolTip" : QT_TRANSLATE_NOOP("newCabinet", "Creates a new document with a Params spreadsheet and a 4-panel cabinet carcass (top, bottom, two sides) whose dimensions are driven by spreadsheet aliases. Edit the Params spreadsheet to resize the cabinet; all panels update automatically."),
+				"Accel"   : "" }
+
+	def Activated(self):
+
+		import os, sys
+		import fakemodule
+
+		modulePath = sys.path
+		
+		module = "newCabinet"
+		
+		path = os.path.dirname(fakemodule.__file__)
+		path = os.path.join(path, "Tools")
+		
+		sys.path.append(path)
+
+		if module in sys.modules:
+			del sys.modules[module]
+
+		__import__(module, globals(), locals(), [], 0)
+		
+		sys.path = modulePath
+
+		return
+
+	def IsActive(self):
+		# not needed now, maybe in the future
+		return True
+
+FreeCADGui.addCommand("newCabinet", newCabinet())
+
+	
+# ######################################################################################################################
 class panelDefaultXY():
 
 	def GetResources(self):

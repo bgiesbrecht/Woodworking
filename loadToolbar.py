@@ -8,6 +8,7 @@ def getItems(iType):
 	if iType == "Woodworking - start":
 		parts = [
 			"magicStart",
+			"newCabinet",
 			"panelDefaultXY",
 			"panelDefaultYX",
 			"panelDefaultXZ",
