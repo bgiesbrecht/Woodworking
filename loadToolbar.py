@@ -187,6 +187,7 @@ def getItems(iType):
 			"jointTenonCut",
 			"jointMortiseCut",
 			"jointDado",
+			"jointRabbet",
 			"grainH",
 			"grainV",
 			"grainX",
