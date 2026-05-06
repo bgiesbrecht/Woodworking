@@ -218,6 +218,7 @@ Tools = [
 	"jointTenonCut", "png", "jointTenonCut, to create tenon by cut", "Click to see info.",
 	"jointMortiseCut", "png", "jointMortiseCut, to create mortise for jointTenonCut", "Click to see info.",
 	"jointDado", "png", "jointDado, cut a rectangular dado groove on a face", "Select a planar face on the host panel, then run this tool. A dialog asks for dado run direction (along one of the in-plane axes), width (mm), depth (mm), and position from the panel edge (or 'center'). The tool subtracts a Part::Box cutter from the host using Part::Cut.",
+	"jointRabbet", "png", "jointRabbet, cut an L-shaped rabbet along an edge", "Select one straight edge of a Part::Box host, then run this tool. A dialog asks for the two cross-section sizes (mm) of the rabbet. The tool subtracts a corner-shaped Part::Box cutter from the host using Part::Cut, and writes editable Params aliases for the two cross-section dimensions.",
 	
 	"grainH", "png", "grainH, to create horizontal grain direction", "Click to see info.",
 	"grainV", "png", "grainV, to create vertical grain direction", "Click to see info.",

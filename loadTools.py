@@ -4147,6 +4147,45 @@ FreeCADGui.addCommand("jointDado", jointDado())
 
 	
 # ######################################################################################################################
+class jointRabbet():
+
+	def GetResources(self):
+		return {"Pixmap"  : os.path.join(iconPath, "jointRabbet.png"),
+				"MenuText": QT_TRANSLATE_NOOP("jointRabbet", "jointRabbet, cut an L-shaped rabbet along an edge"),
+				"ToolTip" : QT_TRANSLATE_NOOP("jointRabbet", "Select one straight edge of a Part::Box host, then run this tool. A dialog asks for the two cross-section sizes (mm) of the rabbet. The tool subtracts a corner-shaped Part::Box cutter from the host using Part::Cut, and writes editable Params aliases for the two cross-section dimensions."),
+				"Accel"   : "" }
+
+	def Activated(self):
+
+		import os, sys
+		import fakemodule
+
+		modulePath = sys.path
+		
+		module = "jointRabbet"
+		
+		path = os.path.dirname(fakemodule.__file__)
+		path = os.path.join(path, "Tools")
+		
+		sys.path.append(path)
+
+		if module in sys.modules:
+			del sys.modules[module]
+
+		__import__(module, globals(), locals(), [], 0)
+		
+		sys.path = modulePath
+
+		return
+
+	def IsActive(self):
+		# not needed now, maybe in the future
+		return True
+
+FreeCADGui.addCommand("jointRabbet", jointRabbet())
+
+	
+# ######################################################################################################################
 class grainH():
 
 	def GetResources(self):
